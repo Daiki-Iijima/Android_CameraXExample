@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
@@ -31,6 +32,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,8 +48,10 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import com.example.cameraxexample.ui.theme.CameraXExampleTheme
+import com.example.cameraxexample.view_model.CameraViewModel
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -67,6 +72,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun CameraScreen(
     cameraPreviewView: @Composable () -> Unit,
+    viewModel: CameraViewModel = viewModel()
 ) {
     Column {
         Box(
@@ -106,7 +112,7 @@ fun CameraScreen(
                     .align(Alignment.CenterEnd)
             ) {
                 IconButton(
-                    onClick = { /* TODO */ },
+                    onClick = { viewModel.toggleCamera() },
                     modifier = Modifier
                         .size(42.dp) // ボタンのサイズ
                         .background(Color.Gray, CircleShape)
@@ -159,14 +165,22 @@ fun CameraScreen(
 }
 
 @Composable
-fun CameraPreviewView(modifier: Modifier = Modifier) {
-    val lensFacing = CameraSelector.LENS_FACING_BACK
+fun CameraPreviewView(
+    modifier: Modifier = Modifier,
+    viewModel: CameraViewModel = viewModel()
+) {
+    val lensFacing by viewModel.cameraLensFacing.collectAsState()
     val lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
     val context: Context = LocalContext.current
     val preview = Builder().build()
     val previewView = remember {
         PreviewView(context)
     }
+
+    val imageCapture = remember {
+        ImageCapture.Builder().build()
+    }
+
     val cameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
 
     LaunchedEffect(lensFacing) {
@@ -194,10 +208,14 @@ private suspend fun Context.getCameraProvider(): ProcessCameraProvider =
 @Composable
 fun GreetingPreview() {
     CameraXExampleTheme {
-        CameraScreen {
-            Box(modifier = Modifier
-                .background(Color.Red)
-                .fillMaxSize())
-        }
+        CameraScreen(
+            cameraPreviewView = {
+                Box(
+                    modifier = Modifier
+                        .background(Color.Red)
+                        .fillMaxSize()
+                )
+            }
+        )
     }
 }
