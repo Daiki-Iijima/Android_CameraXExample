@@ -22,6 +22,10 @@ class CameraViewModel : ViewModel() {
     //  写真を撮影するためのUseCase
     lateinit var imageCapture: ImageCapture
 
+    //  撮影した画像のURL
+    private val _takenImageUrlList = MutableStateFlow<List<String>>(emptyList())
+    val takenImageUrlList = _takenImageUrlList.asStateFlow()
+
     fun toggleCamera() {
         _cameraLensFacing.value =
             if (_cameraLensFacing.value == CameraSelector.LENS_FACING_BACK) CameraSelector.LENS_FACING_FRONT
@@ -50,6 +54,16 @@ class CameraViewModel : ViewModel() {
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                     println("Success")
+                    outputFileResults.savedUri?.let {
+                        //  まだ３枚写真がない場合
+                        if (_takenImageUrlList.value.count() < 3) {
+                            _takenImageUrlList.value += listOf(it.toString())
+                        } else {
+                            //  3枚写真がある場合は、FIFOで
+                            _takenImageUrlList.value = _takenImageUrlList.value.drop(1)
+                            _takenImageUrlList.value += listOf(it.toString())
+                        }
+                    }
                 }
 
                 override fun onError(exception: ImageCaptureException) {

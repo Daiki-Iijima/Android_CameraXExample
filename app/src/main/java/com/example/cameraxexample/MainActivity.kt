@@ -49,6 +49,8 @@ import com.example.cameraxexample.view_model.CameraViewModel
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.rememberAsyncImagePainter
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -71,7 +73,7 @@ fun CameraScreen(
     cameraPreviewView: @Composable () -> Unit,
     viewModel: CameraViewModel = viewModel()
 ) {
-
+    val imageUris = viewModel.takenImageUrlList.collectAsState().value
     val context = LocalContext.current;
 
     Column {
@@ -135,30 +137,20 @@ fun CameraScreen(
                 modifier = Modifier.padding(4.dp, 6.dp, 4.dp, 6.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.girl),
-                    contentDescription = null,
-                    contentScale = ContentScale.FillHeight,
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                )
-                Image(
-                    painter = painterResource(id = R.drawable.girl),
-                    contentDescription = null,
-                    contentScale = ContentScale.FillHeight,
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                )
-                Image(
-                    painter = painterResource(id = R.drawable.girl),
-                    contentDescription = null,
-                    contentScale = ContentScale.FillHeight,
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                )
+                // 常に3枚表示するためのループ
+                for (i in 0 until 3) {
+                    val uri = if (i < imageUris.size) imageUris[i] else null
+                    Image(
+                        painter = if (uri != null) rememberAsyncImagePainter(uri) else painterResource(
+                            id = R.drawable.girl
+                        ),
+                        contentDescription = null,
+                        contentScale = ContentScale.FillHeight,
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                    )
+                }
             }
         }
     }
@@ -169,18 +161,20 @@ fun CameraPreviewView(
     modifier: Modifier = Modifier,
     viewModel: CameraViewModel = viewModel()
 ) {
-    val lensFacing by viewModel.cameraLensFacing.collectAsState()
     val lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
     val context: Context = LocalContext.current
+
+    //  使用するカメラの選択
+    val lensFacing by viewModel.cameraLensFacing.collectAsState()
+    val cameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
+
+    //  プレビュー用UseCase
     val preview = Builder().build()
     val previewView = remember {
         PreviewView(context)
     }
-
     //  保存用のUseCaseを設定
     viewModel.imageCapture = ImageCapture.Builder().build()
-
-    val cameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
 
     LaunchedEffect(lensFacing) {
         val cameraProvider = context.getCameraProvider()
