@@ -15,13 +15,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Place
@@ -74,6 +71,9 @@ fun CameraScreen(
     cameraPreviewView: @Composable () -> Unit,
     viewModel: CameraViewModel = viewModel()
 ) {
+
+    val context = LocalContext.current;
+
     Column {
         Box(
             modifier = Modifier
@@ -90,7 +90,7 @@ fun CameraScreen(
         ) {
             // 撮影ボタン（中央配置）
             IconButton(
-                onClick = { /* TODO */ },
+                onClick = { viewModel.takePhoto(context = context) },
                 modifier = Modifier
                     .size(72.dp) // ボタンのサイズ
                     .background(
@@ -177,16 +177,20 @@ fun CameraPreviewView(
         PreviewView(context)
     }
 
-    val imageCapture = remember {
-        ImageCapture.Builder().build()
-    }
+    //  保存用のUseCaseを設定
+    viewModel.imageCapture = ImageCapture.Builder().build()
 
     val cameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
 
     LaunchedEffect(lensFacing) {
         val cameraProvider = context.getCameraProvider()
         cameraProvider.unbindAll()
-        cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview)
+        cameraProvider.bindToLifecycle(
+            lifecycleOwner,
+            cameraSelector,
+            preview,                //  現在のカメラ映像確認用のUseCaseをBind
+            viewModel.imageCapture  // 撮影用のカメラ映像処理用のUseCaseをBind
+        )
         preview.setSurfaceProvider(previewView.surfaceProvider)
     }
 
