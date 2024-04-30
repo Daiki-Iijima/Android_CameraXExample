@@ -71,6 +71,12 @@ dependencies {
     // coil
     implementation(libs.coil)
 
+    // Compose Material Icons Extended
+    implementation(libs.material.icons.extended)
+
+    //  accompanist
+    implementation(libs.accompanist)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
